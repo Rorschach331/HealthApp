@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthapp.model.Record
+import com.example.healthapp.utils.TimeUtils
 import com.example.healthapp.viewmodel.MainViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
@@ -415,7 +416,7 @@ fun LineChart(records: List<Record>) {
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
                 }
                 
-                val dateStr = formatDate(record.date)
+                val dateStr = TimeUtils.formatDate(record.date)
                 drawContext.canvas.nativeCanvas.drawText(dateStr, tooltipX + tooltipPadding, tooltipY + 50f, tooltipTextPaint)
                 
                 tooltipTextPaint.textSize = 28f

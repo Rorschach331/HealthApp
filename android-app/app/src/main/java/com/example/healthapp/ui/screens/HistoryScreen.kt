@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.healthapp.model.Record
+import com.example.healthapp.utils.TimeUtils
 import com.example.healthapp.viewmodel.MainViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -473,7 +474,7 @@ fun RecordCard(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
-                                formatDate(record.date),
+                                TimeUtils.formatDate(record.date),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -597,16 +598,5 @@ fun getStatus(sys: Int, dia: Int): Pair<String, Color> {
         sys >= 140 || dia >= 90 -> "高血压" to Color(0xFFEF4444)
         sys >= 130 || dia >= 85 -> "偏高" to Color(0xFFF59E0B)
         else -> "正常" to Color(0xFF22C55E)
-    }
-}
-
-fun formatDate(dateStr: String): String {
-    return try {
-        val input = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val date = input.parse(dateStr)
-        val output = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-        output.format(date!!)
-    } catch (e: Exception) {
-        dateStr
     }
 }

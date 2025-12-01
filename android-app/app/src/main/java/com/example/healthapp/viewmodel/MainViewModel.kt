@@ -6,6 +6,7 @@ import com.example.healthapp.api.RetrofitClient
 import com.example.healthapp.model.CreateRecordRequest
 import com.example.healthapp.model.Meta
 import com.example.healthapp.model.Record
+import com.example.healthapp.utils.TimeUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -30,14 +31,14 @@ class MainViewModel : ViewModel() {
     private val _meta = MutableStateFlow(Meta(0, 1, 20, 0))
     val meta: StateFlow<Meta> = _meta
     
-    // Filter state
+    // Filter state - 使用客户端时区的当前日期
     private val _filterName = MutableStateFlow("")
     val filterName: StateFlow<String> = _filterName
     
-    private val _filterStart = MutableStateFlow(java.time.LocalDate.now().minusDays(30).toString())
+    private val _filterStart = MutableStateFlow(TimeUtils.getCurrentLocalDate().minusDays(30).toString())
     val filterStart: StateFlow<String> = _filterStart
     
-    private val _filterEnd = MutableStateFlow(java.time.LocalDate.now().toString())
+    private val _filterEnd = MutableStateFlow(TimeUtils.getCurrentLocalDate().toString())
     val filterEnd: StateFlow<String> = _filterEnd
     
     private var currentPage = 1
@@ -85,8 +86,8 @@ class MainViewModel : ViewModel() {
         } else {
             _filterName.value = ""
         }
-        _filterStart.value = java.time.LocalDate.now().minusDays(30).toString()
-        _filterEnd.value = java.time.LocalDate.now().toString()
+        _filterStart.value = TimeUtils.getCurrentLocalDate().minusDays(30).toString()
+        _filterEnd.value = TimeUtils.getCurrentLocalDate().toString()
         fetchRecords(reset = true)
     }
 

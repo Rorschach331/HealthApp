@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.healthapp.ui.components.Screen
+import com.example.healthapp.utils.TimeUtils
 import com.example.healthapp.viewmodel.MainViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
@@ -37,8 +38,8 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
     var selectedUser by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     
-    var pickedDate by remember { mutableStateOf(LocalDate.now()) }
-    var pickedTime by remember { mutableStateOf(LocalTime.now()) }
+    var pickedDate by remember { mutableStateOf(TimeUtils.getCurrentLocalDate()) }
+    var pickedTime by remember { mutableStateOf(TimeUtils.getCurrentLocalTime()) }
     var showTimePicker by remember { mutableStateOf(false) }
     
     val dateDialogState = rememberMaterialDialogState()
@@ -195,8 +196,8 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                     return@Button
                 }
                 
-                val dateTime = pickedDate.atTime(pickedTime)
-                val date = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant())
+                // 使用 TimeUtils 将客户端时区的时间转换为 UTC Date
+                val date = TimeUtils.toUtcDate(pickedDate, pickedTime)
                 
                 viewModel.addRecord(
                     systolic.toInt(),
@@ -209,8 +210,8 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                     systolic = ""
                     diastolic = ""
                     pulse = ""
-                    pickedDate = LocalDate.now()
-                    pickedTime = LocalTime.now()
+                    pickedDate = TimeUtils.getCurrentLocalDate()
+                    pickedTime = TimeUtils.getCurrentLocalTime()
                     
                     // Navigate to history screen
                     navController.navigate(Screen.List.route) {
