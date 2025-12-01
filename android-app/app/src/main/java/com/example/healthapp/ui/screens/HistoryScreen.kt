@@ -1,6 +1,7 @@
 package com.example.healthapp.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -232,7 +233,10 @@ fun HistoryScreen(viewModel: MainViewModel) {
                                 }
                                 
                                 // Quick Filters
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.horizontalScroll(rememberScrollState()) // Allow horizontal scrolling
+                                ) {
                                     FilterChip(
                                         selected = false,
                                         onClick = {
@@ -300,31 +304,46 @@ fun HistoryScreen(viewModel: MainViewModel) {
                 if (records.isNotEmpty()) {
                     item {
                         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
                             ) {
-                                Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
                                         "统计数据",
-                                        style = MaterialTheme.typography.titleSmall,
+                                        style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
-                                    Text(
-                                        "${if (startDate.isNotEmpty()) startDate else "—"} 至 ${if (endDate.isNotEmpty()) endDate else "—"}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                    )
                                 }
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                
+                                Spacer(modifier = Modifier.height(4.dp))
+                                
+                                Text(
+                                    "${if (startDate.isNotEmpty()) startDate else "—"} 至 ${if (endDate.isNotEmpty()) endDate else "—"}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                )
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp) // Use spacedBy instead of SpaceBetween for better look if chips are small
+                                ) {
                                     AssistChip(
                                         onClick = {},
-                                        label = { Text("高压均值 ${average.first}") }
+                                        label = { Text("高压均值 ${average.first}") },
+                                        colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        border = null
                                     )
                                     AssistChip(
                                         onClick = {},
-                                        label = { Text("低压均值 ${average.second}") }
+                                        label = { Text("低压均值 ${average.second}") },
+                                        colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.surface),
+                                        border = null
                                     )
                                 }
                             }
@@ -359,22 +378,22 @@ fun HistoryScreen(viewModel: MainViewModel) {
                 
                 // Footer
                 item {
-                    Text(
-                        "第 ${meta.page} / ${meta.totalPages} 页，共 ${meta.total} 条记录",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Column(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    
-                    if (meta.page >= meta.totalPages && records.isNotEmpty()) {
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            "已加载全部",
+                            "第 ${meta.page} / ${meta.totalPages} 页，共 ${meta.total} 条记录",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (meta.page >= meta.totalPages && records.isNotEmpty()) {
+                            Text(
+                                "已加载全部",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -422,25 +441,26 @@ fun RecordCard(
     val (statusLabel, statusColor) = getStatus(record.systolic, record.diastolic)
     
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header
+            // Header: Name, Time, Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Surface(
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(36.dp),
+                        shape = MaterialTheme.shapes.medium, // Changed to medium for softer look
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(40.dp),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = record.name?.take(1) ?: "?",
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -448,7 +468,7 @@ fun RecordCard(
                     Column {
                         Text(record.name ?: "未知", style = MaterialTheme.typography.titleMedium)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 formatDate(record.date),
                                 style = MaterialTheme.typography.bodySmall,
@@ -460,73 +480,78 @@ fun RecordCard(
                 StatusTag(statusLabel, statusColor)
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Blood Pressure
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = "${record.systolic}",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = statusColor
-                )
-                Text(
-                    text = " / ",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${record.diastolic}",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = statusColor
-                )
-                Text(
-                    text = " mmHg",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
-                )
-            }
-
-            // Pulse
-            if (record.pulse != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
-                    Text("心率: ${record.pulse}", style = MaterialTheme.typography.bodyMedium)
+            // Main Data: BP and Pulse
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = "${record.systolic}",
+                        style = MaterialTheme.typography.displaySmall, // Larger font
+                        color = statusColor
+                    )
+                    Text(
+                        text = "/",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp, bottom = 4.dp)
+                    )
+                    Text(
+                        text = "${record.diastolic}",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = statusColor
+                    )
+                    Text(
+                        text = "mmHg",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 6.dp, start = 4.dp)
+                    )
                 }
-            }
-            
-            // Comparison with previous
-            if (previousRecord != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                val sysDiff = record.systolic - previousRecord.systolic
-                val diaDiff = record.diastolic - previousRecord.diastolic
                 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("较上次:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    ComparisonChip("高压", sysDiff)
-                    ComparisonChip("低压", diaDiff)
+                if (record.pulse != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                        Text("${record.pulse}", style = MaterialTheme.typography.titleMedium)
+                        Text("bpm", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
             
-            // Comparison with average
-            Spacer(modifier = Modifier.height(4.dp))
-            val sysAvgDiff = record.systolic - average.first
-            val diaAvgDiff = record.diastolic - average.second
-            
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("较均值:", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ComparisonChip("高压", sysAvgDiff)
-                ComparisonChip("低压", diaAvgDiff)
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Delete Button
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.width(4.dp))
-                    Text("删除", color = MaterialTheme.colorScheme.error)
+            // Footer: Comparisons and Delete
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (previousRecord != null) {
+                        val sysDiff = record.systolic - previousRecord.systolic
+                        val diaDiff = record.diastolic - previousRecord.diastolic
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("较上次", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            ComparisonText(sysDiff, diaDiff)
+                        }
+                    }
+                    
+                    val sysAvgDiff = record.systolic - average.first
+                    val diaAvgDiff = record.diastolic - average.second
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("较均值", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        ComparisonText(sysAvgDiff, diaAvgDiff)
+                    }
+                }
+
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
                 }
             }
         }
@@ -534,22 +559,19 @@ fun RecordCard(
 }
 
 @Composable
-fun ComparisonChip(label: String, diff: Int) {
-    val color = when {
-        diff > 0 -> MaterialTheme.colorScheme.error
-        diff < 0 -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
-    }
-    
-    AssistChip(
-        onClick = {},
-        label = {
-            Text("$label ${if (diff == 0) "持平" else "${if (diff > 0) "↑" else "↓"}${if (diff > 0) "+" else ""}$diff"}")
-        },
-        colors = AssistChipDefaults.assistChipColors(
-            labelColor = color
+fun ComparisonText(sysDiff: Int, diaDiff: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "高 ${if (sysDiff > 0) "+" else ""}$sysDiff",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (sysDiff > 0) MaterialTheme.colorScheme.error else if (sysDiff < 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
         )
-    )
+        Text(
+            text = "低 ${if (diaDiff > 0) "+" else ""}$diaDiff",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (diaDiff > 0) MaterialTheme.colorScheme.error else if (diaDiff < 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
+    }
 }
 
 @Composable

@@ -4,7 +4,9 @@ import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
@@ -56,13 +58,14 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()), // Add scroll support
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text("记录血压", style = MaterialTheme.typography.headlineMedium)
 
         Card {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { // Increase spacing
                 // User Dropdown
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -94,9 +97,9 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                 }
 
                 // Date Time Picker
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { // Increase spacing
                     // Date Input
-                    Box(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.weight(1.2f)) { // Give date more weight
                         OutlinedTextField(
                             value = pickedDate.format(dateFormatter),
                             onValueChange = {},
@@ -104,7 +107,7 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                             label = { Text("日期") },
                             trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = false, // Disable input to handle click manually
+                            enabled = false,
                             colors = OutlinedTextFieldDefaults.colors(
                                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
                                 disabledBorderColor = MaterialTheme.colorScheme.outline,
@@ -114,7 +117,6 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                                 disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         )
-                        // Overlay transparent box to capture clicks
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
@@ -126,7 +128,7 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                     }
 
                     // Time Input
-                    Box(modifier = Modifier.weight(1f)) {
+                    Box(modifier = Modifier.weight(0.8f)) {
                         OutlinedTextField(
                             value = pickedTime.format(timeFormatter),
                             onValueChange = {},
@@ -156,29 +158,32 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
 
                 OutlinedTextField(
                     value = systolic,
-                    onValueChange = { systolic = it },
-                    label = { Text("收缩压 (高压) mmHg") },
+                    onValueChange = { if (it.all { char -> char.isDigit() }) systolic = it },
+                    label = { Text("收缩压 (高压)") },
                     placeholder = { Text("120") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
 
                 OutlinedTextField(
                     value = diastolic,
-                    onValueChange = { diastolic = it },
-                    label = { Text("舒张压 (低压) mmHg") },
+                    onValueChange = { if (it.all { char -> char.isDigit() }) diastolic = it },
+                    label = { Text("舒张压 (低压)") },
                     placeholder = { Text("80") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
 
                 OutlinedTextField(
                     value = pulse,
-                    onValueChange = { pulse = it },
-                    label = { Text("心率 (次/分) - 选填") },
+                    onValueChange = { if (it.all { char -> char.isDigit() }) pulse = it },
+                    label = { Text("心率 (选填)") },
                     placeholder = { Text("75") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
             }
         }

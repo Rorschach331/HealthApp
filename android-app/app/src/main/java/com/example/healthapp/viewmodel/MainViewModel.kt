@@ -34,10 +34,10 @@ class MainViewModel : ViewModel() {
     private val _filterName = MutableStateFlow("")
     val filterName: StateFlow<String> = _filterName
     
-    private val _filterStart = MutableStateFlow("")
+    private val _filterStart = MutableStateFlow(java.time.LocalDate.now().minusDays(30).toString())
     val filterStart: StateFlow<String> = _filterStart
     
-    private val _filterEnd = MutableStateFlow("")
+    private val _filterEnd = MutableStateFlow(java.time.LocalDate.now().toString())
     val filterEnd: StateFlow<String> = _filterEnd
     
     private var currentPage = 1
@@ -45,13 +45,26 @@ class MainViewModel : ViewModel() {
 
     init {
         fetchUsers()
+        // fetchRecords will be called inside fetchUsers if a default user is selected, 
+        // otherwise we call it here. But since fetchUsers is async, we might want to call fetchRecords anyway 
+        // to show some data (even if empty user filter initially).
+        // However, if we want to enforce "default user", we should wait for users.
+        // Let's call fetchRecords here with the default date filter.
         fetchRecords(reset = true)
     }
 
     fun fetchUsers() {
         viewModelScope.launch {
             try {
-                _users.value = api.getUsers()
+                val userList = api.getUsers()
+                _users.value = userList
+                
+                // Set default user if not set and users exist
+                if (_filterName.value.isEmpty() && userList.isNotEmpty()) {
+                    _filterName.value = userList[0]
+                    // Re-fetch records with the new user filter
+                    fetchRecords(reset = true)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -66,9 +79,14 @@ class MainViewModel : ViewModel() {
     }
     
     fun resetFilter() {
-        _filterName.value = ""
-        _filterStart.value = ""
-        _filterEnd.value = ""
+        // Reset to default: first user (if exists) and last 30 days
+        if (_users.value.isNotEmpty()) {
+            _filterName.value = _users.value[0]
+        } else {
+            _filterName.value = ""
+        }
+        _filterStart.value = java.time.LocalDate.now().minusDays(30).toString()
+        _filterEnd.value = java.time.LocalDate.now().toString()
         fetchRecords(reset = true)
     }
 
