@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthapp.model.Record
@@ -284,77 +287,165 @@ fun ChartScreen(viewModel: MainViewModel) {
 fun LineChart(records: List<Record>) {
     val sysColor = Color(0xFFEF4444)
     val diaColor = Color(0xFF0EA5E9)
+    val gridColor = Color.LightGray.copy(alpha = 0.5f)
+    val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
     
-    Canvas(modifier = Modifier.fillMaxSize().padding(start = 30.dp, bottom = 30.dp)) {
-        val width = size.width
-        val height = size.height
-        
-        val maxVal = (records.maxOfOrNull { Math.max(it.systolic, it.diastolic) } ?: 200).toFloat() + 20
-        val minVal = (records.minOfOrNull { Math.min(it.systolic, it.diastolic) } ?: 50).toFloat() - 20
-        val range = maxVal - minVal
-        
-        val xStep = width / (records.size - 1)
-        
-        // Draw Axes
-        drawLine(
-            color = Color.Gray,
-            start = Offset(0f, 0f),
-            end = Offset(0f, height),
-            strokeWidth = 2f
-        )
-        drawLine(
-            color = Color.Gray,
-            start = Offset(0f, height),
-            end = Offset(width, height),
-            strokeWidth = 2f
-        )
-        
-        // Draw Paths
-        val sysPath = Path()
-        val diaPath = Path()
-        
-        records.forEachIndexed { index, record ->
-            val x = index * xStep
-            val sysY = height - ((record.systolic - minVal) / range * height)
-            val diaY = height - ((record.diastolic - minVal) / range * height)
+    var selectedIndex by remember { mutableStateOf<Int?>(null) }
+    
+    Column {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(start = 40.dp, bottom = 30.dp, end = 16.dp, top = 16.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        val width = size.width
+                        val xStep = width / (records.size - 1).coerceAtLeast(1)
+                        // Find closest index
+                        val index = (offset.x / xStep).let { 
+                            if (it.isNaN()) 0 else Math.round(it)
+                        }.coerceIn(0, records.size - 1)
+                        selectedIndex = index
+                    }
+                }
+        ) {
+            val width = size.width
+            val height = size.height
             
-            if (index == 0) {
-                sysPath.moveTo(x, sysY)
-                diaPath.moveTo(x, diaY)
-            } else {
-                sysPath.lineTo(x, sysY)
-                diaPath.lineTo(x, diaY)
+            // Calculate Range
+            val maxVal = (records.maxOfOrNull { Math.max(it.systolic, it.diastolic) } ?: 200).toFloat() + 10
+            val minVal = (records.minOfOrNull { Math.min(it.systolic, it.diastolic) } ?: 50).toFloat() - 10
+            val range = maxVal - minVal
+            
+            val xStep = width / (records.size - 1).coerceAtLeast(1)
+            
+            // Paint for text
+            val textPaint = android.graphics.Paint().apply {
+                color = textColor
+                textSize = 30f
+                textAlign = android.graphics.Paint.Align.RIGHT
+                typeface = android.graphics.Typeface.DEFAULT
             }
             
-            // Draw points
-            drawCircle(color = sysColor, radius = 4.dp.toPx(), center = Offset(x, sysY))
-            drawCircle(color = diaColor, radius = 4.dp.toPx(), center = Offset(x, diaY))
+            // Draw Grid and Y-Axis Labels
+            val steps = 5
+            for (i in 0..steps) {
+                val y = height - (i.toFloat() / steps * height)
+                val value = minVal + (i.toFloat() / steps * range)
+                
+                // Grid line
+                drawLine(
+                    color = gridColor,
+                    start = Offset(0f, y),
+                    end = Offset(width, y),
+                    strokeWidth = 1f
+                )
+                
+                // Label
+                drawContext.canvas.nativeCanvas.drawText(
+                    value.toInt().toString(),
+                    -10f, // Offset to left
+                    y + 10f, // Center vertically
+                    textPaint
+                )
+            }
+            
+            // Draw Paths
+            val sysPath = Path()
+            val diaPath = Path()
+            
+            records.forEachIndexed { index, record ->
+                val x = index * xStep
+                val sysY = height - ((record.systolic - minVal) / range * height)
+                val diaY = height - ((record.diastolic - minVal) / range * height)
+                
+                if (index == 0) {
+                    sysPath.moveTo(x, sysY)
+                    diaPath.moveTo(x, diaY)
+                } else {
+                    sysPath.lineTo(x, sysY)
+                    diaPath.lineTo(x, diaY)
+                }
+                
+                // Draw points
+                drawCircle(color = sysColor, radius = 4.dp.toPx(), center = Offset(x, sysY))
+                drawCircle(color = diaColor, radius = 4.dp.toPx(), center = Offset(x, diaY))
+            }
+            
+            drawPath(path = sysPath, color = sysColor, style = Stroke(width = 3.dp.toPx()))
+            drawPath(path = diaPath, color = diaColor, style = Stroke(width = 3.dp.toPx()))
+            
+            // Draw Selection Tooltip
+            selectedIndex?.let { index ->
+                val record = records[index]
+                val x = index * xStep
+                
+                // Vertical indicator line
+                drawLine(
+                    color = Color.Gray,
+                    start = Offset(x, 0f),
+                    end = Offset(x, height),
+                    strokeWidth = 2f,
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                )
+                
+                // Tooltip Box
+                val tooltipWidth = 260f
+                val tooltipHeight = 140f
+                val tooltipPadding = 20f
+                
+                // Determine tooltip position (avoid going off screen)
+                var tooltipX = x + 20f
+                if (tooltipX + tooltipWidth > width) {
+                    tooltipX = x - tooltipWidth - 20f
+                }
+                val tooltipY = 20f
+                
+                drawRoundRect(
+                    color = Color.Black.copy(alpha = 0.8f),
+                    topLeft = Offset(tooltipX, tooltipY),
+                    size = androidx.compose.ui.geometry.Size(tooltipWidth, tooltipHeight),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(16f)
+                )
+                
+                val tooltipTextPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.WHITE
+                    textSize = 32f
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                }
+                
+                val dateStr = formatDate(record.date)
+                drawContext.canvas.nativeCanvas.drawText(dateStr, tooltipX + tooltipPadding, tooltipY + 50f, tooltipTextPaint)
+                
+                tooltipTextPaint.textSize = 28f
+                tooltipTextPaint.typeface = android.graphics.Typeface.DEFAULT
+                drawContext.canvas.nativeCanvas.drawText("高压: ${record.systolic}", tooltipX + tooltipPadding, tooltipY + 90f, tooltipTextPaint)
+                drawContext.canvas.nativeCanvas.drawText("低压: ${record.diastolic}", tooltipX + tooltipPadding, tooltipY + 125f, tooltipTextPaint)
+            }
         }
         
-        drawPath(path = sysPath, color = sysColor, style = Stroke(width = 3.dp.toPx()))
-        drawPath(path = diaPath, color = diaColor, style = Stroke(width = 3.dp.toPx()))
-    }
-    
-    // Legend
-    Row(modifier = Modifier.padding(top = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(sysColor, androidx.compose.foundation.shape.CircleShape)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("收缩压", color = sysColor)
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(diaColor, androidx.compose.foundation.shape.CircleShape)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("舒张压", color = diaColor)
+        // Legend
+        Row(modifier = Modifier.padding(start = 40.dp, top = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(sysColor, androidx.compose.foundation.shape.CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("收缩压", color = sysColor)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(diaColor, androidx.compose.foundation.shape.CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("舒张压", color = diaColor)
+            }
         }
     }
 }
