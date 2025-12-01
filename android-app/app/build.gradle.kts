@@ -49,7 +49,7 @@ android {
 android.applicationVariants.all {
     outputs.all {
         (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-            "健康管理-${name}-${versionName}.apk"
+            "health.apk"
     }
 }
 

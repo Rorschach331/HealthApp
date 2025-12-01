@@ -35,5 +35,32 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: 健康管理-apk
-          path: android-app/app/build/outputs/apk/debug/健康管理-debug-1.0.apk
+          name: health-apk
+          path: android-app/app/build/outputs/apk/debug/health.apk
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: 健康管理 v${{ github.run_number }}
+          body: |
+            ## 健康管理 Android 应用
+
+            ### 功能特性
+            - 📝 记录血压数据
+            - 📊 查看历史记录
+            - 📈 趋势分析图表
+            - ⚙️ 自定义后端服务地址
+
+            ### 安装说明
+            1. 下载 `health.apk` 文件
+            2. 在 Android 设备上安装
+            3. 首次运行时配置后端服务地址
+
+            构建时间: ${{ github.event.head_commit.timestamp }}
+          files: android-app/app/build/outputs/apk/debug/health.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
