@@ -1,0 +1,41 @@
+{
+  "name": "health-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:dev:client\" \"npm:dev:server\"",
+    "dev:client": "vite",
+    "dev:server": "dotnet watch --project server-dotnet/Health.Api",
+    "build": "vite build",
+    "copy:web": "powershell -NoProfile -Command \"Remove-Item -Recurse -Force server-dotnet/Health.Api/wwwroot -ErrorAction SilentlyContinue; New-Item -ItemType Directory -Force -Path server-dotnet/Health.Api/wwwroot | Out-Null; Copy-Item -Recurse -Force dist/* server-dotnet/Health.Api/wwwroot/\"",
+    "start": "npm run build && npm run copy:web && dotnet run --project server-dotnet/Health.Api",
+    "server": "dotnet run --project server-dotnet/Health.Api",
+    "publish:arm64": "npm run build && npm run copy:web && dotnet publish server-dotnet/Health.Api -c Release -r linux-arm64 -p:DeleteExistingFiles=true -p:SelfContained=false",
+    "publish:fd": "npm run build && npm run copy:web && dotnet publish server-dotnet/Health.Api -c Release",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "antd-mobile": "^5.41.1",
+    "chart.js": "^4.5.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.555.0",
+    "react": "^19.2.0",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "vite": "^7.2.4"
+  },
+  "pkg": {}
+}

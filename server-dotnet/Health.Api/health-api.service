@@ -1,0 +1,17 @@
+[Unit]
+Description=Health API Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/health
+ExecStart=/usr/bin/dotnet /opt/health/Health.Api.dll
+Environment=DOTNET_ENVIRONMENT=Production
+Environment=ADDRESS=0.0.0.0
+Environment=PORT=3000
+Environment=DATABASE_PATH=/opt/health/data/health.db
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
