@@ -44,12 +44,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "健康管理-${variant.name}-${variant.versionName}.apk"
-        }
+}
+
+android.applicationVariants.all {
+    outputs.all {
+        (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+            "健康管理-${name}-${versionName}.apk"
     }
 }
 
