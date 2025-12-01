@@ -398,7 +398,7 @@ fun RecordCard(
                     Column {
                         Text(record.name ?: "未知", style = MaterialTheme.typography.titleMedium)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 formatDate(record.date),
                                 style = MaterialTheme.typography.bodySmall,
@@ -485,25 +485,19 @@ fun RecordCard(
 
 @Composable
 fun ComparisonChip(label: String, diff: Int) {
-    val (color, icon) = when {
-        diff > 0 -> MaterialTheme.colorScheme.error to Icons.Default.ArrowUpward
-        diff < 0 -> MaterialTheme.colorScheme.primary to Icons.Default.ArrowDownward
-        else -> MaterialTheme.colorScheme.outline to null
+    val color = when {
+        diff > 0 -> MaterialTheme.colorScheme.error
+        diff < 0 -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
     }
     
     AssistChip(
         onClick = {},
         label = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                if (icon != null) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp))
-                }
-                Text("$label ${if (diff == 0) "持平" else "${if (diff > 0) "+" else ""}$diff"}")
-            }
+            Text("$label ${if (diff == 0) "持平" else "${if (diff > 0) "↑" else "↓"}${if (diff > 0) "+" else ""}$diff"}")
         },
         colors = AssistChipDefaults.assistChipColors(
-            labelColor = color,
-            leadingIconContentColor = color
+            labelColor = color
         )
     )
 }
