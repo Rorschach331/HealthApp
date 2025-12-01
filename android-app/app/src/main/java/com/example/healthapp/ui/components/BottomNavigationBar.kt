@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -17,11 +18,12 @@ sealed class Screen(val route: String, val title: String, val icon: androidx.com
     object Input : Screen("input", "记录", Icons.Default.Add)
     object List : Screen("list", "历史", Icons.Default.List)
     object Chart : Screen("chart", "趋势", Icons.Default.DateRange)
+    object Settings : Screen("settings", "设置", Icons.Default.Settings)
 }
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
-    val items = listOf(Screen.Input, Screen.List, Screen.Chart)
+    val items = listOf(Screen.Input, Screen.List, Screen.Chart, Screen.Settings)
     
     NavigationBar {
         val navBackStackEntry by navController.currentBackStackEntryAsState()

@@ -35,5 +35,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: health-app-debug
-          path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          name: 健康管理-apk
+          path: android-app/app/build/outputs/apk/debug/健康管理-debug-1.0.apk
