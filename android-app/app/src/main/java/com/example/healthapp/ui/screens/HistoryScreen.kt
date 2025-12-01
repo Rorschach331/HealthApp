@@ -501,7 +501,7 @@ fun RecordCard(
                         text = "/",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp, bottom = 4.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp).padding(bottom = 4.dp)
                     )
                     Text(
                         text = "${record.diastolic}",
