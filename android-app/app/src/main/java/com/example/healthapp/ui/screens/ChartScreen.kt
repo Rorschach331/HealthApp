@@ -392,9 +392,9 @@ fun LineChart(records: List<Record>) {
                 )
                 
                 // Tooltip Box
-                val tooltipWidth = 260f
-                val tooltipHeight = 140f
-                val tooltipPadding = 20f
+                val tooltipWidth = 320f  // 增加宽度以显示完整信息
+                val tooltipHeight = if (record.pulse != null) 180f else 150f  // 根据是否有心率动态调整高度
+                val tooltipPadding = 16f
                 
                 // Determine tooltip position (avoid going off screen)
                 var tooltipX = x + 20f
@@ -404,25 +404,36 @@ fun LineChart(records: List<Record>) {
                 val tooltipY = 20f
                 
                 drawRoundRect(
-                    color = Color.Black.copy(alpha = 0.8f),
+                    color = Color.Black.copy(alpha = 0.85f),
                     topLeft = Offset(tooltipX, tooltipY),
                     size = androidx.compose.ui.geometry.Size(tooltipWidth, tooltipHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(16f)
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(12f)
                 )
                 
                 val tooltipTextPaint = android.graphics.Paint().apply {
                     color = android.graphics.Color.WHITE
-                    textSize = 32f
+                    textSize = 30f
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAntiAlias = true
                 }
                 
                 val dateStr = TimeUtils.formatDate(record.date)
-                drawContext.canvas.nativeCanvas.drawText(dateStr, tooltipX + tooltipPadding, tooltipY + 50f, tooltipTextPaint)
+                drawContext.canvas.nativeCanvas.drawText(dateStr, tooltipX + tooltipPadding, tooltipY + 40f, tooltipTextPaint)
                 
                 tooltipTextPaint.textSize = 28f
                 tooltipTextPaint.typeface = android.graphics.Typeface.DEFAULT
-                drawContext.canvas.nativeCanvas.drawText("高压: ${record.systolic}", tooltipX + tooltipPadding, tooltipY + 90f, tooltipTextPaint)
-                drawContext.canvas.nativeCanvas.drawText("低压: ${record.diastolic}", tooltipX + tooltipPadding, tooltipY + 125f, tooltipTextPaint)
+                
+                var currentY = tooltipY + 75f
+                drawContext.canvas.nativeCanvas.drawText("收缩压: ${record.systolic} mmHg", tooltipX + tooltipPadding, currentY, tooltipTextPaint)
+                
+                currentY += 35f
+                drawContext.canvas.nativeCanvas.drawText("舒张压: ${record.diastolic} mmHg", tooltipX + tooltipPadding, currentY, tooltipTextPaint)
+                
+                // 如果有心率数据，也显示
+                if (record.pulse != null) {
+                    currentY += 35f
+                    drawContext.canvas.nativeCanvas.drawText("心率: ${record.pulse} bpm", tooltipX + tooltipPadding, currentY, tooltipTextPaint)
+                }
             }
         }
         
