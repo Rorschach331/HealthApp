@@ -120,7 +120,7 @@ fun HistoryScreen(viewModel: MainViewModel) {
                         Text(if (filterExpanded) "收起筛选" else "展开筛选")
                         Spacer(Modifier.weight(1f))
                         Icon(
-                            if (filterExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            if (filterExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = null
                         )
                     }
@@ -398,7 +398,7 @@ fun RecordCard(
                     Column {
                         Text(record.name ?: "未知", style = MaterialTheme.typography.titleMedium)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 formatDate(record.date),
                                 style = MaterialTheme.typography.bodySmall,
@@ -486,8 +486,8 @@ fun RecordCard(
 @Composable
 fun ComparisonChip(label: String, diff: Int) {
     val (color, icon) = when {
-        diff > 0 -> MaterialTheme.colorScheme.error to Icons.Default.TrendingUp
-        diff < 0 -> MaterialTheme.colorScheme.primary to Icons.Default.TrendingDown
+        diff > 0 -> MaterialTheme.colorScheme.error to Icons.Default.ArrowUpward
+        diff < 0 -> MaterialTheme.colorScheme.primary to Icons.Default.ArrowDownward
         else -> MaterialTheme.colorScheme.outline to null
     }
     
