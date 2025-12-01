@@ -20,6 +20,7 @@ import com.example.healthapp.ui.screens.WelcomeScreen
 import com.example.healthapp.ui.theme.HealthAppTheme
 import com.example.healthapp.utils.PreferenceManager
 import com.example.healthapp.api.RetrofitClient
+import com.example.healthapp.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +52,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    val mainViewModel: MainViewModel = viewModel()
+    
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
@@ -59,10 +62,10 @@ fun MainScreen() {
             startDestination = Screen.Input.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Input.route) { InputScreen() }
-            composable(Screen.List.route) { HistoryScreen() }
-            composable(Screen.Chart.route) { ChartScreen() }
-            composable(Screen.Settings.route) { SettingsScreen() }
+            composable(Screen.Input.route) { InputScreen(mainViewModel) }
+            composable(Screen.List.route) { HistoryScreen(mainViewModel) }
+            composable(Screen.Chart.route) { ChartScreen(mainViewModel) }
+            composable(Screen.Settings.route) { SettingsScreen(mainViewModel) }
         }
     }
 }

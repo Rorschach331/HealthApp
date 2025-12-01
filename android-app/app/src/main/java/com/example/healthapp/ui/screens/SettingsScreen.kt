@@ -7,12 +7,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthapp.api.RetrofitClient
 import com.example.healthapp.utils.PreferenceManager
+import com.example.healthapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(mainViewModel: MainViewModel = viewModel()) {
     val context = LocalContext.current
     val prefs = remember { PreferenceManager(context) }
     var url by remember { mutableStateOf(prefs.getBaseUrl()) }
@@ -58,14 +60,16 @@ fun SettingsScreen() {
                         try {
                             prefs.saveBaseUrl(url)
                             RetrofitClient.setBaseUrl(url)
-                            Toast.makeText(context, "设置已保存", Toast.LENGTH_SHORT).show()
+                            // 立即刷新数据以验证新地址
+                            mainViewModel.refreshData()
+                            Toast.makeText(context, "设置已保存并刷新数据", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             Toast.makeText(context, "保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("保存")
+                    Text("保存并刷新")
                 }
             }
         }

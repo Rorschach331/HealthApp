@@ -75,6 +75,9 @@ dependencies {
     implementation("com.patrykandpatrick.vico:compose:1.13.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.13.0")
     implementation("com.patrykandpatrick.vico:core:1.13.0")
+    
+    // Accompanist SwipeRefresh
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

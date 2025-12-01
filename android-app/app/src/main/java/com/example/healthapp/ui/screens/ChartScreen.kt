@@ -22,7 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun ChartScreen(viewModel: MainViewModel = viewModel()) {
+fun ChartScreen(viewModel: MainViewModel) {
     val records by viewModel.records.collectAsState()
     
     // Sort by date ascending for chart
