@@ -2,12 +2,18 @@ package com.example.healthapp.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -18,27 +24,258 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthapp.model.Record
 import com.example.healthapp.viewmodel.MainViewModel
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChartScreen(viewModel: MainViewModel) {
     val records by viewModel.records.collectAsState()
+    val users by viewModel.users.collectAsState()
+    
+    val filterName by viewModel.filterName.collectAsState()
+    val filterStart by viewModel.filterStart.collectAsState()
+    val filterEnd by viewModel.filterEnd.collectAsState()
+    
+    var filterExpanded by remember { mutableStateOf(false) }
+    var selectedUser by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    
+    val startDateDialogState = rememberMaterialDialogState()
+    val endDateDialogState = rememberMaterialDialogState()
+    
+    // Sync local filter state with ViewModel
+    LaunchedEffect(filterName, filterStart, filterEnd) {
+        selectedUser = filterName
+        startDate = filterStart
+        endDate = filterEnd
+    }
     
     // Sort by date ascending for chart
     val sortedRecords = records.sortedBy { it.date }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
         Text("趋势分析", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 16.dp))
         
+        // Filter Toggle Button
+        OutlinedButton(
+            onClick = { filterExpanded = !filterExpanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (filterExpanded) "收起筛选" else "展开筛选")
+            Spacer(Modifier.weight(1f))
+            Icon(
+                if (filterExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null
+            )
+        }
+        
+        // Filter Panel
+        if (filterExpanded) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Card {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // User Filter
+                    var userExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = userExpanded,
+                        onExpandedChange = { userExpanded = !userExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedUser.ifEmpty { "全部" },
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("姓名筛选") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userExpanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = userExpanded,
+                            onDismissRequest = { userExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("全部") },
+                                onClick = {
+                                    selectedUser = ""
+                                    userExpanded = false
+                                }
+                            )
+                            users.forEach { user ->
+                                DropdownMenuItem(
+                                    text = { Text(user) },
+                                    onClick = {
+                                        selectedUser = user
+                                        userExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Date Range
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = startDate.ifEmpty { "" },
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("开始日期") },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = false,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { startDateDialogState.show() }
+                            )
+                        }
+                        
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = endDate.ifEmpty { "" },
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("结束日期") },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = false,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) { endDateDialogState.show() }
+                            )
+                        }
+                    }
+                    
+                    // Quick Filters
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val now = LocalDate.now()
+                                endDate = now.toString()
+                                startDate = now.minusDays(7).toString()
+                            },
+                            label = { Text("近7天") }
+                        )
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val now = LocalDate.now()
+                                endDate = now.toString()
+                                startDate = now.minusDays(30).toString()
+                            },
+                            label = { Text("近30天") }
+                        )
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                val now = LocalDate.now()
+                                endDate = now.toString()
+                                startDate = now.minusDays(90).toString()
+                            },
+                            label = { Text("近90天") }
+                        )
+                    }
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                viewModel.setFilter(selectedUser, startDate, endDate)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("应用筛选")
+                        }
+                        
+                        OutlinedButton(
+                            onClick = {
+                                selectedUser = ""
+                                startDate = ""
+                                endDate = ""
+                                viewModel.resetFilter()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("重置")
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
         if (sortedRecords.size < 2) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
                 Text("需要至少两条记录才能显示趋势", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
                 LineChart(sortedRecords)
             }
+        }
+    }
+    
+    MaterialDialog(
+        dialogState = startDateDialogState,
+        buttons = {
+            positiveButton("确定")
+            negativeButton("取消")
+        }
+    ) {
+        datepicker(
+            initialDate = if (startDate.isNotEmpty()) LocalDate.parse(startDate) else LocalDate.now(),
+            title = "选择开始日期"
+        ) {
+            startDate = it.toString()
+        }
+    }
+    
+    MaterialDialog(
+        dialogState = endDateDialogState,
+        buttons = {
+            positiveButton("确定")
+            negativeButton("取消")
+        }
+    ) {
+        datepicker(
+            initialDate = if (endDate.isNotEmpty()) LocalDate.parse(endDate) else LocalDate.now(),
+            title = "选择结束日期"
+        ) {
+            endDate = it.toString()
         }
     }
 }
@@ -100,7 +337,7 @@ fun LineChart(records: List<Record>) {
     
     // Legend
     Row(modifier = Modifier.padding(top = 8.dp)) {
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(12.dp)
@@ -110,7 +347,7 @@ fun LineChart(records: List<Record>) {
             Text("收缩压", color = sysColor)
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(12.dp)

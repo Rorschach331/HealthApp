@@ -1,7 +1,7 @@
 package com.example.healthapp.ui.screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,12 +15,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthapp.model.Record
 import com.example.healthapp.viewmodel.MainViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +45,9 @@ fun HistoryScreen(viewModel: MainViewModel) {
     var selectedUser by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf("") }
     var endDate by remember { mutableStateOf("") }
+    
+    val startDateDialogState = rememberMaterialDialogState()
+    val endDateDialogState = rememberMaterialDialogState()
     
     val context = LocalContext.current
     val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = loading)
@@ -169,43 +176,59 @@ fun HistoryScreen(viewModel: MainViewModel) {
                                 
                                 // Date Range
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedTextField(
-                                        value = startDate.ifEmpty { "开始日期" },
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("开始") },
-                                        modifier = Modifier.weight(1f).clickable {
-                                            val calendar = Calendar.getInstance()
-                                            DatePickerDialog(
-                                                context,
-                                                { _, year, month, day ->
-                                                    startDate = String.format("%04d-%02d-%02d", year, month + 1, day)
-                                                },
-                                                calendar.get(Calendar.YEAR),
-                                                calendar.get(Calendar.MONTH),
-                                                calendar.get(Calendar.DAY_OF_MONTH)
-                                            ).show()
-                                        }
-                                    )
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        OutlinedTextField(
+                                            value = startDate.ifEmpty { "" },
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = { Text("开始日期") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            enabled = false,
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { startDateDialogState.show() }
+                                        )
+                                    }
                                     
-                                    OutlinedTextField(
-                                        value = endDate.ifEmpty { "结束日期" },
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("结束") },
-                                        modifier = Modifier.weight(1f).clickable {
-                                            val calendar = Calendar.getInstance()
-                                            DatePickerDialog(
-                                                context,
-                                                { _, year, month, day ->
-                                                    endDate = String.format("%04d-%02d-%02d", year, month + 1, day)
-                                                },
-                                                calendar.get(Calendar.YEAR),
-                                                calendar.get(Calendar.MONTH),
-                                                calendar.get(Calendar.DAY_OF_MONTH)
-                                            ).show()
-                                        }
-                                    )
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        OutlinedTextField(
+                                            value = endDate.ifEmpty { "" },
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = { Text("结束日期") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            enabled = false,
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                                disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { endDateDialogState.show() }
+                                        )
+                                    }
                                 }
                                 
                                 // Quick Filters
@@ -213,30 +236,27 @@ fun HistoryScreen(viewModel: MainViewModel) {
                                     FilterChip(
                                         selected = false,
                                         onClick = {
-                                            val cal = Calendar.getInstance()
-                                            endDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
-                                            cal.add(Calendar.DAY_OF_YEAR, -7)
-                                            startDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                                            val now = LocalDate.now()
+                                            endDate = now.toString()
+                                            startDate = now.minusDays(7).toString()
                                         },
                                         label = { Text("近7天") }
                                     )
                                     FilterChip(
                                         selected = false,
                                         onClick = {
-                                            val cal = Calendar.getInstance()
-                                            endDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
-                                            cal.add(Calendar.DAY_OF_YEAR, -30)
-                                            startDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                                            val now = LocalDate.now()
+                                            endDate = now.toString()
+                                            startDate = now.minusDays(30).toString()
                                         },
                                         label = { Text("近30天") }
                                     )
                                     FilterChip(
                                         selected = false,
                                         onClick = {
-                                            val cal = Calendar.getInstance()
-                                            endDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
-                                            cal.add(Calendar.DAY_OF_YEAR, -90)
-                                            startDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+                                            val now = LocalDate.now()
+                                            endDate = now.toString()
+                                            startDate = now.minusDays(90).toString()
                                         },
                                         label = { Text("近90天") }
                                     )
@@ -358,6 +378,36 @@ fun HistoryScreen(viewModel: MainViewModel) {
                     }
                 }
             }
+        }
+    }
+    
+    MaterialDialog(
+        dialogState = startDateDialogState,
+        buttons = {
+            positiveButton("确定")
+            negativeButton("取消")
+        }
+    ) {
+        datepicker(
+            initialDate = if (startDate.isNotEmpty()) LocalDate.parse(startDate) else LocalDate.now(),
+            title = "选择开始日期"
+        ) {
+            startDate = it.toString()
+        }
+    }
+    
+    MaterialDialog(
+        dialogState = endDateDialogState,
+        buttons = {
+            positiveButton("确定")
+            negativeButton("取消")
+        }
+    ) {
+        datepicker(
+            initialDate = if (endDate.isNotEmpty()) LocalDate.parse(endDate) else LocalDate.now(),
+            title = "选择结束日期"
+        ) {
+            endDate = it.toString()
         }
     }
 }

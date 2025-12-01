@@ -78,6 +78,9 @@ dependencies {
     
     // Accompanist SwipeRefresh
     implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
+    
+    // Date Time Picker
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

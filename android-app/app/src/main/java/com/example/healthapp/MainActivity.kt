@@ -63,7 +63,7 @@ fun MainScreen() {
             startDestination = Screen.Input.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Input.route) { InputScreen(mainViewModel) }
+            composable(Screen.Input.route) { InputScreen(mainViewModel, navController) }
             composable(Screen.List.route) { HistoryScreen(mainViewModel) }
             composable(Screen.Chart.route) { ChartScreen(mainViewModel) }
             composable(Screen.Settings.route) { SettingsScreen(mainViewModel) }
