@@ -1,6 +1,7 @@
 package com.example.healthapp.ui.screens
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -100,13 +101,21 @@ fun LineChart(records: List<Record>) {
     // Legend
     Row(modifier = Modifier.padding(top = 8.dp)) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            androidx.compose.foundation.background(sysColor, androidx.compose.foundation.shape.CircleShape)
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(sysColor, androidx.compose.foundation.shape.CircleShape)
+            )
             Spacer(modifier = Modifier.width(4.dp))
             Text("收缩压", color = sysColor)
         }
         Spacer(modifier = Modifier.width(16.dp))
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            androidx.compose.foundation.background(diaColor, androidx.compose.foundation.shape.CircleShape)
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(diaColor, androidx.compose.foundation.shape.CircleShape)
+            )
             Spacer(modifier = Modifier.width(4.dp))
             Text("舒张压", color = diaColor)
         }
