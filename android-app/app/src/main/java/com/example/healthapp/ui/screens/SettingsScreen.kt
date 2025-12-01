@@ -9,8 +9,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.healthapp.api.RetrofitClient
+import com.example.healthapp.utils.ExportUtils
 import com.example.healthapp.utils.PreferenceManager
 import com.example.healthapp.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +74,74 @@ fun SettingsScreen(mainViewModel: MainViewModel = viewModel()) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("保存并刷新")
+                }
+            }
+        }
+        
+        // 数据导出功能
+        Card {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "数据导出",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                val scope = rememberCoroutineScope()
+                val records by mainViewModel.records.collectAsState()
+                
+                Button(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val file = withContext(Dispatchers.IO) {
+                                    ExportUtils.exportToExcel(
+                                        context,
+                                        records,
+                                        "health_data_${System.currentTimeMillis()}"
+                                    )
+                                }
+                                if (file != null) {
+                                    Toast.makeText(context, "导出成功: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+                                    ExportUtils.shareFile(context, file)
+                                } else {
+                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("导出为 Excel")
+                }
+                
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val file = withContext(Dispatchers.IO) {
+                                    ExportUtils.exportToPdf(
+                                        context,
+                                        records,
+                                        "health_report_${System.currentTimeMillis()}"
+                                    )
+                                }
+                                if (file != null) {
+                                    Toast.makeText(context, "导出成功: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+                                    ExportUtils.shareFile(context, file)
+                                } else {
+                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("导出为 PDF")
                 }
             }
         }
