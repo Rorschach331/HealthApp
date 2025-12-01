@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MainViewModel : ViewModel() {
-    private val api = RetrofitClient.apiService
+    private val api get() = RetrofitClient.apiService
 
     private val _records = MutableStateFlow<List<Record>>(emptyList())
     val records: StateFlow<List<Record>> = _records

@@ -29,6 +29,12 @@ class MainActivity : ComponentActivity() {
         
         val prefs = PreferenceManager(this)
         
+        // Initialize Retrofit synchronously before UI
+        val baseUrl = prefs.getBaseUrl()
+        if (baseUrl.isNotEmpty()) {
+            RetrofitClient.setBaseUrl(baseUrl)
+        }
+        
         setContent {
             HealthAppTheme {
                 var isConfigured by remember { mutableStateOf(!prefs.isFirstRun()) }
@@ -36,13 +42,6 @@ class MainActivity : ComponentActivity() {
                 if (!isConfigured) {
                     WelcomeScreen(onConfigured = { isConfigured = true })
                 } else {
-                    // Initialize Retrofit with stored URL
-                    LaunchedEffect(Unit) {
-                        val baseUrl = prefs.getBaseUrl()
-                        if (baseUrl.isNotEmpty()) {
-                            RetrofitClient.setBaseUrl(baseUrl)
-                        }
-                    }
                     MainScreen()
                 }
             }
