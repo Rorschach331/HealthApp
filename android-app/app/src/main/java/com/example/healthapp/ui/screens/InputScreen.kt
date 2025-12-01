@@ -15,12 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.example.healthapp.ui.components.Screen
 import com.example.healthapp.viewmodel.MainViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
-import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import java.time.LocalDate
 import java.time.LocalTime
@@ -39,9 +39,9 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
     
     var pickedDate by remember { mutableStateOf(LocalDate.now()) }
     var pickedTime by remember { mutableStateOf(LocalTime.now()) }
+    var showTimePicker by remember { mutableStateOf(false) }
     
     val dateDialogState = rememberMaterialDialogState()
-    val timeDialogState = rememberMaterialDialogState()
 
     val users by viewModel.users.collectAsState()
     val context = LocalContext.current
@@ -151,7 +151,7 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
-                                ) { timeDialogState.show() }
+                                ) { showTimePicker = true }
                         )
                     }
                 }
@@ -243,19 +243,53 @@ fun InputScreen(viewModel: MainViewModel, navController: NavController) {
         }
     }
     
-    MaterialDialog(
-        dialogState = timeDialogState,
-        buttons = {
-            positiveButton("确定")
-            negativeButton("取消")
-        }
-    ) {
-        timepicker(
+    if (showTimePicker) {
+        WheelTimePickerDialog(
             initialTime = pickedTime,
-            title = "选择时间",
-            is24HourClock = true
-        ) {
-            pickedTime = it
-        }
+            onDismiss = { showTimePicker = false },
+            onConfirm = { 
+                pickedTime = it
+                showTimePicker = false
+            }
+        )
     }
+}
+
+@Composable
+fun WheelTimePickerDialog(
+    initialTime: LocalTime,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalTime) -> Unit
+) {
+    var selectedTime by remember { mutableStateOf(initialTime) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("选择时间") },
+        text = {
+            AndroidView(
+                factory = { context ->
+                    val view = android.view.LayoutInflater.from(context).inflate(com.example.healthapp.R.layout.dialog_time_picker, null)
+                    val timePicker = view.findViewById<android.widget.TimePicker>(com.example.healthapp.R.id.timePicker)
+                    timePicker.setIs24HourView(true)
+                    timePicker.hour = initialTime.hour
+                    timePicker.minute = initialTime.minute
+                    timePicker.setOnTimeChangedListener { _, hour, minute ->
+                        selectedTime = LocalTime.of(hour, minute)
+                    }
+                    view
+                }
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selectedTime) }) {
+                Text("确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
