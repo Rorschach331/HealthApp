@@ -715,11 +715,169 @@ const ChartView = ({
   );
 };
 
+// --- Authentication ---
+
+const TOKEN_KEY = "health_app_token";
+const CODE_KEY = "health_app_code";
+
+const LoginView = ({ onSuccess }) => {
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!code.trim()) {
+      setError("请输入授权码");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.setItem(CODE_KEY, code.trim());
+        Toast.show({ content: "登录成功", duration: 1500 });
+        onSuccess();
+      } else {
+        setError("授权码错误，请重试");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("登录失败，请检查网络连接");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        padding: "1rem",
+      }}
+    >
+      <div className="card" style={{ maxWidth: "400px", width: "100%" }}>
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+          <Heart
+            size={48}
+            style={{ color: "var(--primary)", marginBottom: "1rem" }}
+          />
+          <h1 className="title">健康管理系统</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
+            请输入授权码以继续
+          </p>
+        </div>
+
+        <form onSubmit={handleLogin}>
+          <div className="input-group" style={{ marginBottom: "1rem" }}>
+            <label className="label">授权码</label>
+            <input
+              type="password"
+              className="input"
+              placeholder="请输入授权码"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              disabled={loading}
+              autoFocus
+            />
+          </div>
+
+          {error && (
+            <div
+              style={{
+                color: "var(--error)",
+                fontSize: "0.875rem",
+                marginBottom: "1rem",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <Button
+            block
+            color="primary"
+            type="submit"
+            disabled={loading}
+            loading={loading}
+          >
+            {loading ? "登录中..." : "登录"}
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 const API_BASE = "/api";
 
+// API helper with token management
+const apiRequest = async (url, options = {}) => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const headers = {
+    ...options.headers,
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+
+  let response = await fetch(url, { ...options, headers });
+
+  // Handle 401 - try to refresh token
+  if (response.status === 401) {
+    const savedCode = localStorage.getItem(CODE_KEY);
+    if (savedCode) {
+      try {
+        const loginResponse = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: savedCode }),
+        });
+
+        if (loginResponse.ok) {
+          const data = await loginResponse.json();
+          localStorage.setItem(TOKEN_KEY, data.token);
+
+          // Retry original request with new token
+          headers.Authorization = `Bearer ${data.token}`;
+          response = await fetch(url, { ...options, headers });
+        } else {
+          // Refresh failed, clear storage
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(CODE_KEY);
+          window.location.reload(); // Force re-login
+        }
+      } catch (err) {
+        console.error("Token refresh failed:", err);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(CODE_KEY);
+        window.location.reload();
+      }
+    } else {
+      // No saved code, need to login
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.reload();
+    }
+  }
+
+  return response;
+};
+
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState("input");
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -739,6 +897,14 @@ function App() {
 
   // 从后端加载数据
   useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    setAuthenticated(true);
     fetchUsers();
     const defaultStart = format(
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -747,7 +913,7 @@ function App() {
     const defaultEnd = format(new Date(), "yyyy-MM-dd");
     setFilter((f) => ({ ...f, start: defaultStart, end: defaultEnd }));
     fetchRecords();
-  }, []);
+  }, [authenticated]);
 
   const fetchRecords = async (params = {}, append = false) => {
     try {
@@ -760,7 +926,7 @@ function App() {
         if (v) searchParams.set(k, v);
       });
       const qs = searchParams.toString();
-      const response = await fetch(`${API_BASE}/records?${qs}`);
+      const response = await apiRequest(`${API_BASE}/records?${qs}`);
       const result = await response.json();
       const data = result.data || [];
       const meta = result.meta || {
@@ -811,7 +977,7 @@ function App() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/users`);
+      const response = await apiRequest(`${API_BASE}/users`);
       const data = await response.json();
       setUsers(data);
     } catch (error) {
@@ -821,7 +987,7 @@ function App() {
 
   const handleSave = async (newRecord) => {
     try {
-      const response = await fetch(`${API_BASE}/records`, {
+      const response = await apiRequest(`${API_BASE}/records`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newRecord),
@@ -841,7 +1007,7 @@ function App() {
 
   const handleDeleteRecord = async (id) => {
     try {
-      const resp = await fetch(`${API_BASE}/records/${id}`, {
+      const resp = await apiRequest(`${API_BASE}/records/${id}`, {
         method: "DELETE",
       });
       if (resp.ok) {
@@ -856,6 +1022,11 @@ function App() {
       Toast.show({ content: "网络异常，删除失败", duration: 2000 });
     }
   };
+
+  // Show login if not authenticated
+  if (!authenticated) {
+    return <LoginView onSuccess={() => setAuthenticated(true)} />;
+  }
 
   if (loading) {
     return (
