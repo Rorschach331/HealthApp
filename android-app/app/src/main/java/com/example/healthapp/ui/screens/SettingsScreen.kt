@@ -80,6 +80,63 @@ fun SettingsScreen(mainViewModel: MainViewModel = viewModel()) {
             }
         }
         
+        // 服务授权
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "服务授权",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                var authCode by remember { mutableStateOf(prefs.getAuthCode()) }
+                var isAuthenticating by remember { mutableStateOf(false) }
+                val scope = rememberCoroutineScope()
+                
+                OutlinedTextField(
+                    value = authCode,
+                    onValueChange = { authCode = it },
+                    label = { Text("授权码") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = {
+                        if (authCode.isBlank()) {
+                            Toast.makeText(context, "请输入授权码", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        scope.launch {
+                            isAuthenticating = true
+                            try {
+                                val response = RetrofitClient.apiService.login(com.example.healthapp.api.LoginRequest(authCode))
+                                prefs.saveAuthToken(response.token)
+                                prefs.saveAuthCode(authCode) // 保存授权码用于自动刷新
+                                Toast.makeText(context, "授权验证成功", Toast.LENGTH_SHORT).show()
+                                mainViewModel.refreshData() // 授权成功后刷新数据
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "授权失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isAuthenticating = false
+                            }
+                        }
+                    },
+                    enabled = !isAuthenticating,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isAuthenticating) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("验证并保存")
+                    }
+                }
+            }
+        }
+        
         // 数据导出功能
         Card {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -10,7 +10,13 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+data class LoginRequest(val code: String)
+data class LoginResponse(val token: String)
+
 interface HealthApiService {
+    @POST("api/auth/login")
+    suspend fun login(@Body request: LoginRequest): LoginResponse
+
     @GET("api/records")
     suspend fun getRecords(
         @Query("start") start: String? = null,

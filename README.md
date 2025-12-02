@@ -35,6 +35,14 @@
 - **数据存储**：使用 SQLite 数据库，轻量且易于迁移。
 - **Swagger 文档**：内置 Swagger UI，方便 API 调试。
 
+### 🔐 安全认证
+
+为了保护数据安全，系统引入了简单的授权码机制：
+
+1.  **服务端配置**：在 `appsettings.json` 中设置 `AuthSettings:Code`（默认为 `123456`）。
+2.  **客户端授权**：首次使用 App 时，需在“设置”页面输入该授权码。
+3.  **自动刷新**：App 会自动管理 Token，并在过期时尝试静默刷新，无需频繁输入。
+
 ## 🛠️ 技术栈
 
 - **Android**: Kotlin, Jetpack Compose, Retrofit, Material3, Vico Charts

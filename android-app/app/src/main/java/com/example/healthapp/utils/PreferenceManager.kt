@@ -22,4 +22,20 @@ class PreferenceManager(context: Context) {
             saveBaseUrl("http://10.0.2.2:3000/")
         }
     }
+
+    fun getAuthToken(): String {
+        return prefs.getString("auth_token", "") ?: ""
+    }
+
+    fun saveAuthToken(token: String) {
+        prefs.edit().putString("auth_token", token).apply()
+    }
+
+    fun getAuthCode(): String {
+        return prefs.getString("auth_code", "") ?: ""
+    }
+
+    fun saveAuthCode(code: String) {
+        prefs.edit().putString("auth_code", code).apply()
+    }
 }

@@ -44,13 +44,15 @@ class MainViewModel : ViewModel() {
     private var currentPage = 1
     private val pageSize = 20
 
+    private val _authError = MutableStateFlow(false)
+    val authError: StateFlow<Boolean> = _authError
+
+    fun clearAuthError() {
+        _authError.value = false
+    }
+
     init {
         fetchUsers()
-        // fetchRecords will be called inside fetchUsers if a default user is selected, 
-        // otherwise we call it here. But since fetchUsers is async, we might want to call fetchRecords anyway 
-        // to show some data (even if empty user filter initially).
-        // However, if we want to enforce "default user", we should wait for users.
-        // Let's call fetchRecords here with the default date filter.
         fetchRecords(reset = true)
     }
 
@@ -66,6 +68,9 @@ class MainViewModel : ViewModel() {
                     // Re-fetch records with the new user filter
                     fetchRecords(reset = true)
                 }
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 401) _authError.value = true
+                e.printStackTrace()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -128,6 +133,9 @@ class MainViewModel : ViewModel() {
                 }
                 
                 _meta.value = response.meta
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 401) _authError.value = true
+                e.printStackTrace()
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -151,6 +159,9 @@ class MainViewModel : ViewModel() {
                 api.createRecord(CreateRecordRequest(systolic, diastolic, pulse, name))
                 fetchRecords(reset = true)
                 onSuccess()
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 401) _authError.value = true
+                e.printStackTrace()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -162,6 +173,9 @@ class MainViewModel : ViewModel() {
             try {
                 api.deleteRecord(id)
                 fetchRecords(reset = true)
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 401) _authError.value = true
+                e.printStackTrace()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

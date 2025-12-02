@@ -1,9 +1,40 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.FileProviders;
- 
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+// Add Authentication
+var authSettings = config.GetSection("AuthSettings");
+var secretKey = authSettings["SecretKey"];
+if (!string.IsNullOrEmpty(secretKey))
+{
+    var key = Encoding.ASCII.GetBytes(secretKey);
+    builder.Services.AddAuthentication(x =>
+    {
+        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(x =>
+    {
+        x.RequireHttpsMetadata = false;
+        x.SaveToken = true;
+        x.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
+    builder.Services.AddAuthorization();
+}
+
 var app = builder.Build();
 
 var address = Environment.GetEnvironmentVariable("ADDRESS") ?? config["Server:Address"] ?? "0.0.0.0";
@@ -13,6 +44,32 @@ Directory.CreateDirectory(dataDir);
 var dbPath = Environment.GetEnvironmentVariable("DATABASE_PATH") ?? config["Database:Path"] ?? Path.Combine(dataDir, "health.db");
 var users = config.GetSection("Users").Get<string[]>() ?? Array.Empty<string>();
 var staticPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+
+// Add Authentication Middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Login Endpoint
+app.MapPost("/api/auth/login", (LoginRequest request) =>
+{
+    var validCode = authSettings["Code"];
+    if (string.IsNullOrEmpty(validCode) || string.IsNullOrEmpty(secretKey))
+        return Results.Problem("Server configuration error");
+
+    if (request.Code != validCode)
+        return Results.Unauthorized();
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.ASCII.GetBytes(secretKey);
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[] { new Claim("id", "user") }),
+        Expires = DateTime.UtcNow.AddDays(365),
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+    };
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    return Results.Ok(new { token = tokenHandler.WriteToken(token) });
+});
 
 using (var conn = new SqliteConnection($"Data Source={dbPath}"))
 {
@@ -77,7 +134,7 @@ app.MapGet("/api/records", (string? start, string? end, string? name, int? page,
     }
     var totalPages = (int)Math.Ceiling(total / (double)ps);
     return Results.Json(new { data = list, meta = new { total, page = p, pageSize = ps, totalPages } });
-});
+}).RequireAuthorization();
 
 app.MapPost("/api/records", async (HttpContext ctx) =>
 {
@@ -101,7 +158,7 @@ app.MapPost("/api/records", async (HttpContext ctx) =>
     cmd.Parameters.AddWithValue("$name", n.GetString());
     var id = (long)cmd.ExecuteScalar()!;
     return Results.Json(new { id, date, systolic = s.GetInt32(), diastolic = d.GetInt32(), pulse, name = n.GetString() });
-});
+}).RequireAuthorization();
 
 app.MapDelete("/api/records/{id}", (long id) =>
 {
@@ -113,7 +170,7 @@ app.MapDelete("/api/records/{id}", (long id) =>
     var changes = cmd.ExecuteNonQuery();
     if (changes > 0) return Results.Json(new { message = "删除成功" });
     return Results.NotFound(new { error = "记录不存在" });
-});
+}).RequireAuthorization();
 
 if (Directory.Exists(staticPath))
 {
@@ -126,6 +183,11 @@ if (Directory.Exists(staticPath))
         : Results.NotFound());
 }
 
-app.MapGet("/api/users", () => Results.Json(users));
+app.MapGet("/api/users", () => Results.Json(users)).RequireAuthorization();
 app.Urls.Add($"http://{address}:{port}");
 app.Run();
+
+public class LoginRequest
+{
+    public string Code { get; set; } = string.Empty;
+}

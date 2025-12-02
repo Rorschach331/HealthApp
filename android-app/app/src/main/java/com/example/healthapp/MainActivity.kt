@@ -53,9 +53,29 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     val navController = rememberNavController()
     val mainViewModel: MainViewModel = viewModel()
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val authError by mainViewModel.authError.collectAsState()
+    
+    LaunchedEffect(authError) {
+        if (authError) {
+            val result = snackbarHostState.showSnackbar(
+                message = "认证失效，请配置授权码",
+                actionLabel = "去配置",
+                duration = androidx.compose.material3.SnackbarDuration.Indefinite
+            )
+            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                navController.navigate(Screen.Settings.route) {
+                    // 避免在返回栈中堆积多个设置页
+                    launchSingleTop = true
+                }
+                mainViewModel.clearAuthError()
+            }
+        }
+    }
     
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = { BottomNavigationBar(navController) },
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         NavHost(
             navController = navController,
