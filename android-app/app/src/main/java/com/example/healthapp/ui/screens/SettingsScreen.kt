@@ -1,6 +1,7 @@
 package com.example.healthapp.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -90,27 +91,45 @@ fun SettingsScreen(mainViewModel: MainViewModel = viewModel()) {
                 val scope = rememberCoroutineScope()
                 val records by mainViewModel.records.collectAsState()
                 
-                Button(
-                    onClick = {
+                // Excel 导出 Launcher
+                val excelLauncher = rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                ) { uri ->
+                    uri?.let {
                         scope.launch {
-                            try {
-                                val file = withContext(Dispatchers.IO) {
-                                    ExportUtils.exportToExcel(
-                                        context,
-                                        records,
-                                        "health_data_${System.currentTimeMillis()}"
-                                    )
-                                }
-                                if (file != null) {
-                                    Toast.makeText(context, "导出成功: ${file.absolutePath}", Toast.LENGTH_LONG).show()
-                                    ExportUtils.shareFile(context, file)
-                                } else {
-                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
-                                }
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            val success = withContext(Dispatchers.IO) {
+                                ExportUtils.writeExcelToUri(context, it, records)
+                            }
+                            if (success) {
+                                Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
                             }
                         }
+                    }
+                }
+                
+                // PDF 导出 Launcher
+                val pdfLauncher = rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/pdf")
+                ) { uri ->
+                    uri?.let {
+                        scope.launch {
+                            val success = withContext(Dispatchers.IO) {
+                                ExportUtils.writePdfToUri(context, it, records)
+                            }
+                            if (success) {
+                                Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+                
+                Button(
+                    onClick = {
+                        excelLauncher.launch("health_data_${System.currentTimeMillis()}.xlsx")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -119,25 +138,7 @@ fun SettingsScreen(mainViewModel: MainViewModel = viewModel()) {
                 
                 OutlinedButton(
                     onClick = {
-                        scope.launch {
-                            try {
-                                val file = withContext(Dispatchers.IO) {
-                                    ExportUtils.exportToPdf(
-                                        context,
-                                        records,
-                                        "health_report_${System.currentTimeMillis()}"
-                                    )
-                                }
-                                if (file != null) {
-                                    Toast.makeText(context, "导出成功: ${file.absolutePath}", Toast.LENGTH_LONG).show()
-                                    ExportUtils.shareFile(context, file)
-                                } else {
-                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
-                                }
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                        pdfLauncher.launch("health_report_${System.currentTimeMillis()}.pdf")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
