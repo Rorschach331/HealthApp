@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.FileProviders;
@@ -8,6 +9,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+
+// Configure Rate Limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(config.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 // Add Authentication
 var authSettings = config.GetSection("AuthSettings");
@@ -45,6 +52,9 @@ var dbPath = Environment.GetEnvironmentVariable("DATABASE_PATH") ?? config["Data
 var users = config.GetSection("Users").Get<string[]>() ?? Array.Empty<string>();
 var staticPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 
+// Add Rate Limiting Middleware (must be before Authentication)
+app.UseIpRateLimiting();
+
 // Add Authentication Middleware
 app.UseAuthentication();
 app.UseAuthorization();
@@ -64,7 +74,7 @@ app.MapPost("/api/auth/login", (LoginRequest request) =>
     var tokenDescriptor = new SecurityTokenDescriptor
     {
         Subject = new ClaimsIdentity(new[] { new Claim("id", "user") }),
-        Expires = DateTime.UtcNow.AddDays(365),
+        Expires = DateTime.UtcNow.AddHours(24), // Changed from 365 days to 24 hours
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
     };
     var token = tokenHandler.CreateToken(tokenDescriptor);
