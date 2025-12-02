@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -145,6 +146,20 @@ fun SettingsScreen(mainViewModel: MainViewModel = viewModel()) {
                     Text("导出为 PDF")
                 }
             }
+        }
+        
+        // 版本信息
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val versionName = packageInfo.versionName
+            Text(
+                text = "当前版本: v$versionName",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

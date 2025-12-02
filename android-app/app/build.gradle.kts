@@ -12,7 +12,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0" // 修改为 1.0.0
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -65,10 +65,13 @@ android {
 }
 
 android.applicationVariants.all {
-    outputs.all {
-        (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-            "health.apk"
-    }
+    val variant = this
+    variant.outputs
+        .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+        .forEach { output ->
+            val outputFileName = "health-v${variant.versionName}.apk"
+            output.outputFileName = outputFileName
+        }
 }
 
 dependencies {
