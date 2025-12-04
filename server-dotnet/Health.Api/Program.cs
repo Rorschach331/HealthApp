@@ -156,7 +156,17 @@ app.MapPost("/api/records", async (HttpContext ctx) =>
     if (!json.TryGetProperty("name", out var n) || n.ValueKind != System.Text.Json.JsonValueKind.String)
         return Results.BadRequest(new { error = "姓名为必填项" });
     var pulse = json.TryGetProperty("pulse", out var p) && p.ValueKind != System.Text.Json.JsonValueKind.Null ? p.GetInt32() : (int?)null;
-    var date = DateTime.UtcNow.ToString("o");
+    
+    string date;
+    if (json.TryGetProperty("date", out var dt) && dt.ValueKind == System.Text.Json.JsonValueKind.String)
+    {
+        date = dt.GetString()!;
+    }
+    else
+    {
+        date = DateTime.UtcNow.ToString("o");
+    }
+
     using var conn = new SqliteConnection($"Data Source={dbPath}");
     conn.Open();
     using var cmd = conn.CreateCommand();

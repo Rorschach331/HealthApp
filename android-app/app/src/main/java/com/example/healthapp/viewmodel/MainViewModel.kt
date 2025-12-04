@@ -156,7 +156,8 @@ class MainViewModel : ViewModel() {
     fun addRecord(systolic: Int, diastolic: Int, pulse: Int?, name: String, date: Date = Date(), onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                api.createRecord(CreateRecordRequest(systolic, diastolic, pulse, name))
+                val dateStr = TimeUtils.toIsoString(date)
+                api.createRecord(CreateRecordRequest(systolic, diastolic, pulse, name, dateStr))
                 fetchRecords(reset = true)
                 onSuccess()
             } catch (e: retrofit2.HttpException) {

@@ -25,5 +25,6 @@ data class CreateRecordRequest(
     val systolic: Int,
     val diastolic: Int,
     val pulse: Int?,
-    val name: String
+    val name: String,
+    val date: String? = null
 )

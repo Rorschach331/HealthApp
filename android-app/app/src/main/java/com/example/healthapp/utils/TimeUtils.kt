@@ -66,4 +66,8 @@ object TimeUtils {
     fun getCurrentLocalTime(): LocalTime {
         return LocalTime.now(CLIENT_ZONE)
     }
+
+    fun toIsoString(date: Date): String {
+        return date.toInstant().toString()
+    }
 }
